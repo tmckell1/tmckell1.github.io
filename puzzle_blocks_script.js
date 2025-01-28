@@ -71,28 +71,41 @@ function generateLevel() {
     const blockPositions = [];
     const targetPositions = [];
 
-    // Place blocks
-    while (blockPositions.length < numBlocksAndTargets) {
-        const x = 2 + Math.floor(Math.random() * (size-4));
-        const y = 2 + Math.floor(Math.random() * (size-4));
+    // Keep trying to place blocks and targets until we have equal numbers of both
+    let maxAttempts = 100; // Prevent infinite loops
+    let attempts = 0;
+
+    while ((blockPositions.length < numBlocksAndTargets || targetPositions.length < numBlocksAndTargets) && attempts < maxAttempts) {
+        attempts++;
         
-        if (level[y][x] === EMPTY && isValidPosition(x, y)) {
-            level[y][x] = BLOCK;
-            blockPositions.push({x, y});
-            clearSpaceAround(x, y);
+        // Try to place a block if needed
+        if (blockPositions.length < numBlocksAndTargets) {
+            const x = 2 + Math.floor(Math.random() * (size-4));
+            const y = 2 + Math.floor(Math.random() * (size-4));
+            
+            if (level[y][x] === EMPTY && isValidPosition(x, y)) {
+                level[y][x] = BLOCK;
+                blockPositions.push({x, y});
+                clearSpaceAround(x, y);
+            }
+        }
+
+        // Try to place a target if needed
+        if (targetPositions.length < numBlocksAndTargets) {
+            const x = 2 + Math.floor(Math.random() * (size-4));
+            const y = 2 + Math.floor(Math.random() * (size-4));
+            
+            if (level[y][x] === EMPTY && isValidPosition(x, y)) {
+                level[y][x] = TARGET;
+                targetPositions.push({x, y});
+                clearSpaceAround(x, y);
+            }
         }
     }
 
-    // Place targets
-    while (targetPositions.length < numBlocksAndTargets) {
-        const x = 2 + Math.floor(Math.random() * (size-4));
-        const y = 2 + Math.floor(Math.random() * (size-4));
-        
-        if (level[y][x] === EMPTY && isValidPosition(x, y)) {
-            level[y][x] = TARGET;
-            targetPositions.push({x, y});
-            clearSpaceAround(x, y);
-        }
+    // If we couldn't place all blocks and targets, try generating a new level
+    if (blockPositions.length !== numBlocksAndTargets || targetPositions.length !== numBlocksAndTargets) {
+        return generateLevel(); // Recursively try again
     }
 
     // Store the positions
