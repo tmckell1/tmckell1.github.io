@@ -335,13 +335,18 @@
             if (currentLevel[newPos.y][newPos.x] === WALL) {
                 return false;
             }
-            
+        
             if (currentLevel[newPos.y][newPos.x] === BLOCK) {
                 const beyondBlock = {
                     x: newPos.x + movement.x,
                     y: newPos.y + movement.y
                 };
-                
+        
+                // Check if the block is on a target
+                if (isOnTarget(newPos.x, newPos.y)) {
+                    return false; // Prevent moving the block if it's on a target
+                }
+        
                 if (currentLevel[beyondBlock.y][beyondBlock.x] === EMPTY ||
                     currentLevel[beyondBlock.y][beyondBlock.x] === TARGET) {
                     currentLevel[beyondBlock.y][beyondBlock.x] = BLOCK;
@@ -350,7 +355,7 @@
                 }
                 return false;
             }
-            
+        
             return true;
         }
 
