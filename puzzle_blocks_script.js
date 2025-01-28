@@ -8,6 +8,7 @@ function generateLevel() {
 
     function isValidBlockPosition(x, y) {
         if (x <= 1 || x >= size-2 || y <= 1 || y >= size-2) return false;
+        if (level[y][x] !== EMPTY) return false; // Ensure the position is empty
         let emptySpaces = { horizontal: 0, vertical: 0 };
         if (level[y][x-1] === EMPTY) emptySpaces.horizontal++;
         if (level[y][x+1] === EMPTY) emptySpaces.horizontal++;
@@ -35,17 +36,16 @@ function generateLevel() {
     }
 
     let blocksPlaced = 0, targetsPlaced = 0, numBlocksAndTargets = 2;
-    while (blocksPlaced < numBlocksAndTargets && targetsPlaced < numBlocksAndTargets) {
+    while (blocksPlaced < numBlocksAndTargets || targetsPlaced < numBlocksAndTargets) {
         const x = 2 + Math.floor(Math.random() * (size-4)), y = 2 + Math.floor(Math.random() * (size-4));
         if (level[y][x] === EMPTY && isValidBlockPosition(x, y)) {
-            clearSpaceAround(x, y);
-            level[y][x] = BLOCK;
-            blocksPlaced++;
-        }
-        const tx = 2 + Math.floor(Math.random() * (size-4)), ty = 2 + Math.floor(Math.random() * (size-4));
-        if (level[ty][tx] === EMPTY && isValidBlockPosition(tx, ty)) {
-            level[ty][tx] = TARGET;
-            targetsPlaced++;
+            if (blocksPlaced < numBlocksAndTargets) {
+                level[y][x] = BLOCK;
+                blocksPlaced++;
+            } else if (targetsPlaced < numBlocksAndTargets) {
+                level[y][x] = TARGET;
+                targetsPlaced++;
+            }
         }
     }
 
