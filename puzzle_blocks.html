@@ -342,8 +342,19 @@
                     y: newPos.y + movement.y
                 };
         
+                // Check if the block is on a target
+                if (isOnTarget(newPos.x, newPos.y)) {
+                    return false; // Prevent moving the block if it's on a target
+                }
+        
                 if (currentLevel[beyondBlock.y][beyondBlock.x] === EMPTY ||
                     currentLevel[beyondBlock.y][beyondBlock.x] === TARGET) {
+                    // Check if the block is moving to a target
+                    if (isOnTarget(beyondBlock.x, beyondBlock.y)) {
+                        currentLevel[beyondBlock.y][beyondBlock.x] = BLOCK;
+                        currentLevel[newPos.y][newPos.x] = EMPTY;
+                        return true;
+                    }
                     currentLevel[beyondBlock.y][beyondBlock.x] = BLOCK;
                     currentLevel[newPos.y][newPos.x] = EMPTY;
                     return true;
