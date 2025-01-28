@@ -1,0 +1,89 @@
+.game-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    font-family: Arial, sans-serif;
+}
+
+.header {
+    width: 100%;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px;
+    box-sizing: border-box;
+}
+
+.home-button {
+    padding: 10px 20px;
+    background: #e74c3c;
+    border: none;
+    border-radius: 5px;
+    color: white;
+    cursor: pointer;
+    text-decoration: none;
+    font-size: 16px;
+}
+
+.home-button:hover {
+    background: #c0392b;
+}
+
+.game-grid {
+    display: grid;
+    grid-template-columns: repeat(8, 55px);  /* Increased from 50px to 55px */
+    grid-template-rows: repeat(8, 55px);     /* Increased from 50px to 55px */
+    gap: 1px;
+    background: #2c3e50;
+    padding: 10px;
+    border-radius: 5px;
+}
+
+.cell {
+    width: 55px;    /* Increased from 50px to 55px */
+    height: 55px;   /* Increased from 50px to 55px */
+    background: #34495e;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.wall {
+    background: #7f8c8d;
+}
+
+.player {
+    background: #e74c3c;
+    border-radius: 50%;
+}
+
+.block {
+    background: #f1c40f;
+}
+
+.target {
+    background: #27ae60;
+}
+
+.block.on-target {
+    background: #f39c12;
+}
+
+.controls {
+    margin-top: 20px;
+    text-align: center;
+}
+
+button {
+    padding: 10px 20px;
+    margin: 0 5px;
+    background: #3498db;
+    border: none;
+    border-radius: 5px;
+    color: white;
+    cursor: pointer;
+}
+
+button:hover {
+    background: #2980b9;
+}
