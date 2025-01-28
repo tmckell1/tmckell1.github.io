@@ -297,6 +297,10 @@
                     } else if (currentLevel[y][x] === TARGET) {
                         cell.classList.add('target');
                     }
+                    // Ensure target squares are always rendered
+                    if (isOnTarget(x, y)) {
+                        cell.classList.add('target');
+                    }
                     
                     gameGrid.appendChild(cell);
                 }
