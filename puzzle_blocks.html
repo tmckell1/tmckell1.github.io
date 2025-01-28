@@ -143,7 +143,7 @@
                     }
                 }
             }
-
+        
             // Function to check if a position is valid for a block
             function isValidBlockPosition(x, y) {
                 // Must not be adjacent to border
@@ -167,7 +167,7 @@
                 
                 return emptySpaces.horizontal >= 1 && emptySpaces.vertical >= 1;
             }
-
+        
             // Function to ensure space around a position
             function clearSpaceAround(x, y) {
                 // Clear immediate adjacent cells
@@ -190,28 +190,26 @@
                 }
             }
             
-            // Place 2 blocks in valid positions
+            // Place 2 blocks and 2 targets in valid positions
             let blocksPlaced = 0;
-            while (blocksPlaced < 2) {
-                const x = 2 + Math.floor(Math.random() * (size-4));  // Keep away from borders
-                const y = 2 + Math.floor(Math.random() * (size-4));  // Keep away from borders
-                if (level[y][x] === EMPTY && isValidBlockPosition(x, y)) {
-                    clearSpaceAround(x, y);
-                    level[y][x] = BLOCK;
-                    blocksPlaced++;
-                    console.log(`Block placed at (${x}, ${y})`);
-                }
-            }
-            
-            // Place 2 targets in accessible positions
             let targetsPlaced = 0;
-            while (targetsPlaced < 2) {
+            const numBlocksAndTargets = 2; // Adjust this number as needed
+        
+            while (blocksPlaced < numBlocksAndTargets || targetsPlaced < numBlocksAndTargets) {
                 const x = 2 + Math.floor(Math.random() * (size-4));  // Keep away from borders
                 const y = 2 + Math.floor(Math.random() * (size-4));  // Keep away from borders
+        
                 if (level[y][x] === EMPTY && isValidBlockPosition(x, y)) {
-                    level[y][x] = TARGET;
-                    targetsPlaced++;
-                    console.log(`Target placed at (${x}, ${y})`);
+                    if (blocksPlaced < numBlocksAndTargets) {
+                        clearSpaceAround(x, y);
+                        level[y][x] = BLOCK;
+                        blocksPlaced++;
+                        console.log(`Block placed at (${x}, ${y})`);
+                    } else if (targetsPlaced < numBlocksAndTargets) {
+                        level[y][x] = TARGET;
+                        targetsPlaced++;
+                        console.log(`Target placed at (${x}, ${y})`);
+                    }
                 }
             }
             
