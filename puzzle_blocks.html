@@ -149,17 +149,17 @@
             }
         
             let blocksPlaced = 0, targetsPlaced = 0, numBlocksAndTargets = 2;
-            while (blocksPlaced < numBlocksAndTargets || targetsPlaced < numBlocksAndTargets) {
+            while (blocksPlaced < numBlocksAndTargets && targetsPlaced < numBlocksAndTargets) {
                 const x = 2 + Math.floor(Math.random() * (size-4)), y = 2 + Math.floor(Math.random() * (size-4));
                 if (level[y][x] === EMPTY && isValidBlockPosition(x, y)) {
-                    if (blocksPlaced < numBlocksAndTargets) {
-                        clearSpaceAround(x, y);
-                        level[y][x] = BLOCK;
-                        blocksPlaced++;
-                    } else if (targetsPlaced < numBlocksAndTargets) {
-                        level[y][x] = TARGET;
-                        targetsPlaced++;
-                    }
+                    clearSpaceAround(x, y);
+                    level[y][x] = BLOCK;
+                    blocksPlaced++;
+                }
+                const tx = 2 + Math.floor(Math.random() * (size-4)), ty = 2 + Math.floor(Math.random() * (size-4));
+                if (level[ty][tx] === EMPTY && isValidBlockPosition(tx, ty)) {
+                    level[ty][tx] = TARGET;
+                    targetsPlaced++;
                 }
             }
         
