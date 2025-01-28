@@ -89,33 +89,25 @@ function initializeGame() {
 //     initializeLevel(currentLevelIndex);
 // }
 
-// // Render the game
-// function renderGame() {
-//     const gameGrid = document.getElementById('gameGrid');
-//     gameGrid.innerHTML = '';
-//     for (let y = 0; y < currentLevel.length; y++) {
-//         for (let x = 0; x < currentLevel[y].length; x++) {
-//             const cell = document.createElement('div');
-//             cell.className = 'cell';
-//             if (currentLevel[y][x] === WALL) cell.classList.add('wall');
-//             else if (x === playerPos.x && y === playerPos.y) cell.classList.add('player');
-//             else if (currentLevel[y][x] === BLOCK) {
-//                 cell.classList.add('block');
-//                 if (isOnTarget(x, y)) cell.classList.add('on-target');
-//             } else if (currentLevel[y][x] === TARGET) cell.classList.add('target');
-//             gameGrid.appendChild(cell);
-//         }
-//     }
-//     checkWinCondition();
-// }
-
-// // Initialize the game
-// function initializeGame() {
-//     blocks = [];
-//     targets = [];
-//     currentLevel = generateLevel();
-//     renderGame();
-// }
+// Render the game
+function renderGame() {
+    const gameGrid = document.getElementById('gameGrid');
+    gameGrid.innerHTML = '';
+    for (let y = 0; y < currentLevel.length; y++) {
+        for (let x = 0; x < currentLevel[y].length; x++) {
+            const cell = document.createElement('div');
+            cell.className = 'cell';
+            if (currentLevel[y][x] === WALL) cell.classList.add('wall');
+            else if (x === playerPos.x && y === playerPos.y) cell.classList.add('player');
+            else if (currentLevel[y][x] === BLOCK) {
+                cell.classList.add('block');
+                if (isOnTarget(x, y)) cell.classList.add('on-target');
+            } else if (currentLevel[y][x] === TARGET) cell.classList.add('target');
+            gameGrid.appendChild(cell);
+        }
+    }
+    // checkWinCondition();
+}
 
 // // Check if the player can move to a new position
 // function canMove(newPos, movement) {
