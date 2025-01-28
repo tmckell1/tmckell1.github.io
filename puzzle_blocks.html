@@ -36,8 +36,8 @@
         
         .game-grid {
             display: grid;
-            grid-template-columns: repeat(8, 50px);
-            grid-template-rows: repeat(8, 50px);
+            grid-template-columns: repeat(8, 55px);  /* Increased from 50px to 55px */
+            grid-template-rows: repeat(8, 55px);     /* Increased from 50px to 55px */
             gap: 1px;
             background: #2c3e50;
             padding: 10px;
@@ -45,8 +45,8 @@
         }
         
         .cell {
-            width: 50px;
-            height: 50px;
+            width: 55px;    /* Increased from 50px to 55px */
+            height: 55px;   /* Increased from 50px to 55px */
             background: #34495e;
             display: flex;
             justify-content: center;
@@ -118,7 +118,7 @@
         </div>
     </div>
 
-<script>
+    <script>
         const EMPTY = 0;
         const WALL = 1;
         const PLAYER = 2;
@@ -154,6 +154,11 @@
 
             // Function to check if a position is valid for a block
             function isValidBlockPosition(x, y) {
+                // Must not be adjacent to border
+                if (x <= 1 || x >= size-2 || y <= 1 || y >= size-2) {
+                    return false;
+                }
+                
                 // Must have at least two adjacent empty spaces on different axes
                 let emptySpaces = {
                     horizontal: 0,
@@ -183,8 +188,8 @@
             // Place player in a random position with clear space
             let playerPlaced = false;
             while (!playerPlaced) {
-                const x = 1 + Math.floor(Math.random() * (size-2));
-                const y = 1 + Math.floor(Math.random() * (size-2));
+                const x = 2 + Math.floor(Math.random() * (size-4));  // Keep away from borders
+                const y = 2 + Math.floor(Math.random() * (size-4));  // Keep away from borders
                 if (level[y][x] === EMPTY) {
                     clearSpaceAround(x, y);
                     level[y][x] = PLAYER;
@@ -196,8 +201,8 @@
             // Place 2 blocks in valid positions
             let itemsPlaced = 0;
             while (itemsPlaced < 2) {
-                const x = 1 + Math.floor(Math.random() * (size-2));
-                const y = 1 + Math.floor(Math.random() * (size-2));
+                const x = 2 + Math.floor(Math.random() * (size-4));  // Keep away from borders
+                const y = 2 + Math.floor(Math.random() * (size-4));  // Keep away from borders
                 if (level[y][x] === EMPTY && isValidBlockPosition(x, y)) {
                     clearSpaceAround(x, y);
                     level[y][x] = BLOCK;
@@ -208,8 +213,8 @@
             // Place 2 targets in accessible positions
             itemsPlaced = 0;
             while (itemsPlaced < 2) {
-                const x = 1 + Math.floor(Math.random() * (size-2));
-                const y = 1 + Math.floor(Math.random() * (size-2));
+                const x = 2 + Math.floor(Math.random() * (size-4));  // Keep away from borders
+                const y = 2 + Math.floor(Math.random() * (size-4));  // Keep away from borders
                 if (level[y][x] === EMPTY && isValidBlockPosition(x, y)) {
                     level[y][x] = TARGET;
                     itemsPlaced++;
