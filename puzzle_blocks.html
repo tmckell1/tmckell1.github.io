@@ -199,6 +199,7 @@
                     clearSpaceAround(x, y);
                     level[y][x] = BLOCK;
                     blocksPlaced++;
+                    console.log(`Block placed at (${x}, ${y})`);
                 }
             }
             
@@ -210,6 +211,7 @@
                 if (level[y][x] === EMPTY && isValidBlockPosition(x, y)) {
                     level[y][x] = TARGET;
                     targetsPlaced++;
+                    console.log(`Target placed at (${x}, ${y})`);
                 }
             }
             
