@@ -8,12 +8,13 @@ let playerPos = { x: 1, y: 1 }, blocks = [], targets = [], currentLevel;
 function ensureAccessibility(level) {
     for (let y = 1; y < level.length - 1; y++) {
         for (let x = 1; x < level[y].length - 1; x++) {
-            if ([BLOCK, TARGET, PLAYER].includes(level[y][x])) {
+            if ([BLOCK, PLAYER].includes(level[y][x])) {
                 if (Math.random() < 0.5) level[y][x-1] = EMPTY;
                 else level[y][x+1] = EMPTY;
                 if (Math.random() < 0.5) level[y-1][x] = EMPTY;
                 else level[y+1][x] = EMPTY;
             }
+            // Don't clear targets during accessibility check
         }
     }
 }
@@ -47,10 +48,11 @@ function generateLevel() {
 
     // Clear space around a given position
     function clearSpaceAround(x, y) {
+        // Don't clear targets when clearing space
         if (level[y-1][x] === WALL) level[y-1][x] = EMPTY;
         if (level[y+1][x] === WALL) level[y+1][x] = EMPTY;
         if (level[y][x-1] === WALL) level[y][x-1] = EMPTY;
-        if (level[y][x+1] === WALL) level[y][x+1] = EMPTY;
+        if (level[y][x+1] === WALL) level[y][x-1] = EMPTY;
     }
 
     // Place the player in a random empty position
@@ -71,41 +73,27 @@ function generateLevel() {
     const blockPositions = [];
     const targetPositions = [];
 
-    // Keep trying to place blocks and targets until we have equal numbers of both
-    let maxAttempts = 100; // Prevent infinite loops
-    let attempts = 0;
-
-    while ((blockPositions.length < numBlocksAndTargets || targetPositions.length < numBlocksAndTargets) && attempts < maxAttempts) {
-        attempts++;
+    // First, place all targets
+    while (targetPositions.length < numBlocksAndTargets) {
+        const x = 2 + Math.floor(Math.random() * (size-4));
+        const y = 2 + Math.floor(Math.random() * (size-4));
         
-        // Try to place a block if needed
-        if (blockPositions.length < numBlocksAndTargets) {
-            const x = 2 + Math.floor(Math.random() * (size-4));
-            const y = 2 + Math.floor(Math.random() * (size-4));
-            
-            if (level[y][x] === EMPTY && isValidPosition(x, y)) {
-                level[y][x] = BLOCK;
-                blockPositions.push({x, y});
-                clearSpaceAround(x, y);
-            }
-        }
-
-        // Try to place a target if needed
-        if (targetPositions.length < numBlocksAndTargets) {
-            const x = 2 + Math.floor(Math.random() * (size-4));
-            const y = 2 + Math.floor(Math.random() * (size-4));
-            
-            if (level[y][x] === EMPTY && isValidPosition(x, y)) {
-                level[y][x] = TARGET;
-                targetPositions.push({x, y});
-                clearSpaceAround(x, y);
-            }
+        if (level[y][x] === EMPTY) {
+            level[y][x] = TARGET;
+            targetPositions.push({x, y});
         }
     }
 
-    // If we couldn't place all blocks and targets, try generating a new level
-    if (blockPositions.length !== numBlocksAndTargets || targetPositions.length !== numBlocksAndTargets) {
-        return generateLevel(); // Recursively try again
+    // Then place blocks
+    while (blockPositions.length < numBlocksAndTargets) {
+        const x = 2 + Math.floor(Math.random() * (size-4));
+        const y = 2 + Math.floor(Math.random() * (size-4));
+        
+        if (level[y][x] === EMPTY) {
+            level[y][x] = BLOCK;
+            blockPositions.push({x, y});
+            clearSpaceAround(x, y);
+        }
     }
 
     // Store the positions
