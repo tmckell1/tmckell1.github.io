@@ -55,6 +55,12 @@
             text-align: center;
         }
         
+        .level-info {
+            margin: 10px 0;
+            font-size: 1.2em;
+            color: #2c3e50;
+        }
+        
         button {
             padding: 10px 20px;
             margin: 0 5px;
@@ -73,6 +79,7 @@
 <body>
     <div class="game-container">
         <h1>Zelda-style Puzzle Game</h1>
+        <div class="level-info">Level: <span id="levelNumber">1</span></div>
         <p>Use arrow keys or buttons to move. Push blocks onto green targets!</p>
         <div class="game-grid" id="gameGrid"></div>
         <div class="controls">
@@ -94,32 +101,72 @@
         let playerPos = { x: 1, y: 1 };
         let blocks = [];
         let targets = [];
+        let currentLevelNumber = 1;
         
-        // Level design
-        const level = [
-            [1, 1, 1, 1, 1, 1, 1, 1],
-            [1, 2, 0, 0, 0, 0, 0, 1],
-            [1, 0, 0, 3, 0, 0, 0, 1],
-            [1, 0, 1, 0, 1, 0, 0, 1],
-            [1, 0, 0, 0, 0, 0, 4, 1],
-            [1, 0, 3, 0, 0, 4, 0, 1],
-            [1, 0, 0, 0, 0, 0, 0, 1],
-            [1, 1, 1, 1, 1, 1, 1, 1]
+        // Multiple level designs
+        const levels = [
+            // Level 1
+            [
+                [1, 1, 1, 1, 1, 1, 1, 1],
+                [1, 2, 0, 0, 0, 0, 0, 1],
+                [1, 0, 0, 3, 0, 0, 0, 1],
+                [1, 0, 1, 0, 1, 0, 0, 1],
+                [1, 0, 0, 0, 0, 0, 4, 1],
+                [1, 0, 3, 0, 0, 4, 0, 1],
+                [1, 0, 0, 0, 0, 0, 0, 1],
+                [1, 1, 1, 1, 1, 1, 1, 1]
+            ],
+            // Level 2
+            [
+                [1, 1, 1, 1, 1, 1, 1, 1],
+                [1, 2, 0, 1, 0, 0, 0, 1],
+                [1, 0, 3, 0, 0, 0, 0, 1],
+                [1, 1, 0, 0, 1, 4, 0, 1],
+                [1, 0, 0, 1, 1, 0, 0, 1],
+                [1, 0, 3, 0, 0, 4, 0, 1],
+                [1, 0, 0, 0, 0, 0, 0, 1],
+                [1, 1, 1, 1, 1, 1, 1, 1]
+            ],
+            // Level 3
+            [
+                [1, 1, 1, 1, 1, 1, 1, 1],
+                [1, 0, 0, 0, 0, 4, 0, 1],
+                [1, 0, 1, 1, 1, 0, 0, 1],
+                [1, 0, 0, 2, 0, 3, 0, 1],
+                [1, 0, 1, 1, 1, 0, 0, 1],
+                [1, 0, 0, 3, 0, 0, 0, 1],
+                [1, 0, 0, 0, 0, 4, 0, 1],
+                [1, 1, 1, 1, 1, 1, 1, 1]
+            ],
+            // Level 4
+            [
+                [1, 1, 1, 1, 1, 1, 1, 1],
+                [1, 4, 0, 0, 0, 0, 4, 1],
+                [1, 0, 1, 0, 0, 1, 0, 1],
+                [1, 0, 0, 3, 3, 0, 0, 1],
+                [1, 0, 1, 2, 0, 1, 0, 1],
+                [1, 0, 0, 1, 1, 0, 0, 1],
+                [1, 0, 0, 0, 0, 0, 0, 1],
+                [1, 1, 1, 1, 1, 1, 1, 1]
+            ]
         ];
         
-        let currentLevel = JSON.parse(JSON.stringify(level));
+        let currentLevel;
 
         function initializeGame() {
             blocks = [];
             targets = [];
+            currentLevel = JSON.parse(JSON.stringify(levels[currentLevelNumber - 1]));
             
-            for (let y = 0; y < level.length; y++) {
-                for (let x = 0; x < level[y].length; x++) {
-                    if (level[y][x] === PLAYER) {
+            document.getElementById('levelNumber').textContent = currentLevelNumber;
+            
+            for (let y = 0; y < currentLevel.length; y++) {
+                for (let x = 0; x < currentLevel[y].length; x++) {
+                    if (currentLevel[y][x] === PLAYER) {
                         playerPos = { x, y };
-                    } else if (level[y][x] === BLOCK) {
+                    } else if (currentLevel[y][x] === BLOCK) {
                         blocks.push({ x, y });
-                    } else if (level[y][x] === TARGET) {
+                    } else if (currentLevel[y][x] === TARGET) {
                         targets.push({ x, y });
                     }
                 }
@@ -207,25 +254,34 @@
         }
 
         function checkWinCondition() {
-            const allBlocksOnTarget = blocks.every(block => {
-                const blockInLevel = currentLevel.some((row, y) => 
-                    row.some((cell, x) => 
-                        cell === BLOCK && isOnTarget(x, y)
-                    )
-                );
-                return blockInLevel;
-            });
+            const blocksOnTarget = blocks.reduce((count, _) => {
+                let blockCount = 0;
+                currentLevel.forEach((row, y) => {
+                    row.forEach((cell, x) => {
+                        if (cell === BLOCK && isOnTarget(x, y)) {
+                            blockCount++;
+                        }
+                    });
+                });
+                return blockCount;
+            }, 0);
             
-            if (allBlocksOnTarget) {
+            if (blocksOnTarget === blocks.length && blocksOnTarget === targets.length) {
                 setTimeout(() => {
-                    alert('Congratulations! You solved the puzzle!');
-                    resetLevel();
+                    if (currentLevelNumber < levels.length) {
+                        alert(`Level ${currentLevelNumber} Complete! Starting next level...`);
+                        currentLevelNumber++;
+                        initializeGame();
+                    } else {
+                        alert('Congratulations! You\'ve completed all levels!');
+                        currentLevelNumber = 1;
+                        initializeGame();
+                    }
                 }, 100);
             }
         }
 
         function resetLevel() {
-            currentLevel = JSON.parse(JSON.stringify(level));
             initializeGame();
         }
 
