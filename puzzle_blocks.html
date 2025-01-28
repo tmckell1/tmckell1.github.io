@@ -102,61 +102,89 @@
         let blocks = [];
         let targets = [];
         let currentLevelNumber = 1;
-        
-        // Multiple level designs
-        const levels = [
-            // Level 1
-            [
-                [1, 1, 1, 1, 1, 1, 1, 1],
-                [1, 2, 0, 0, 0, 0, 0, 1],
-                [1, 0, 0, 3, 0, 0, 0, 1],
-                [1, 0, 1, 0, 1, 0, 0, 1],
-                [1, 0, 0, 0, 0, 0, 4, 1],
-                [1, 0, 3, 0, 0, 4, 0, 1],
-                [1, 0, 0, 0, 0, 0, 0, 1],
-                [1, 1, 1, 1, 1, 1, 1, 1]
-            ],
-            // Level 2
-            [
-                [1, 1, 1, 1, 1, 1, 1, 1],
-                [1, 2, 0, 1, 0, 0, 0, 1],
-                [1, 0, 3, 0, 0, 0, 0, 1],
-                [1, 1, 0, 0, 1, 4, 0, 1],
-                [1, 0, 0, 1, 1, 0, 0, 1],
-                [1, 0, 3, 0, 0, 4, 0, 1],
-                [1, 0, 0, 0, 0, 0, 0, 1],
-                [1, 1, 1, 1, 1, 1, 1, 1]
-            ],
-            // Level 3
-            [
-                [1, 1, 1, 1, 1, 1, 1, 1],
-                [1, 0, 0, 0, 0, 4, 0, 1],
-                [1, 0, 1, 1, 1, 0, 0, 1],
-                [1, 0, 0, 2, 0, 3, 0, 1],
-                [1, 0, 1, 1, 1, 0, 0, 1],
-                [1, 0, 0, 3, 0, 0, 0, 1],
-                [1, 0, 0, 0, 0, 4, 0, 1],
-                [1, 1, 1, 1, 1, 1, 1, 1]
-            ],
-            // Level 4
-            [
-                [1, 1, 1, 1, 1, 1, 1, 1],
-                [1, 4, 0, 0, 0, 0, 4, 1],
-                [1, 0, 1, 0, 0, 1, 0, 1],
-                [1, 0, 0, 3, 3, 0, 0, 1],
-                [1, 0, 1, 2, 0, 1, 0, 1],
-                [1, 0, 0, 1, 1, 0, 0, 1],
-                [1, 0, 0, 0, 0, 0, 0, 1],
-                [1, 1, 1, 1, 1, 1, 1, 1]
-            ]
-        ];
-        
         let currentLevel;
+
+        function generateLevel() {
+            const size = 8;
+            let level = Array(size).fill().map(() => Array(size).fill(EMPTY));
+            
+            // Add outer walls
+            for (let i = 0; i < size; i++) {
+                level[0][i] = WALL;
+                level[size-1][i] = WALL;
+                level[i][0] = WALL;
+                level[i][size-1] = WALL;
+            }
+            
+            // Add random inner walls (25% chance per inner cell)
+            for (let y = 2; y < size-2; y++) {
+                for (let x = 2; x < size-2; x++) {
+                    if (Math.random() < 0.25) {
+                        level[y][x] = WALL;
+                    }
+                }
+            }
+            
+            // Place player in a random position
+            let playerPlaced = false;
+            while (!playerPlaced) {
+                const x = 1 + Math.floor(Math.random() * (size-2));
+                const y = 1 + Math.floor(Math.random() * (size-2));
+                if (level[y][x] === EMPTY) {
+                    level[y][x] = PLAYER;
+                    playerPos = { x, y };
+                    playerPlaced = true;
+                }
+            }
+            
+            // Place 2 blocks and 2 targets
+            let itemsPlaced = 0;
+            while (itemsPlaced < 2) {
+                const x = 1 + Math.floor(Math.random() * (size-2));
+                const y = 1 + Math.floor(Math.random() * (size-2));
+                if (level[y][x] === EMPTY) {
+                    level[y][x] = BLOCK;
+                    itemsPlaced++;
+                }
+            }
+            
+            itemsPlaced = 0;
+            while (itemsPlaced < 2) {
+                const x = 1 + Math.floor(Math.random() * (size-2));
+                const y = 1 + Math.floor(Math.random() * (size-2));
+                if (level[y][x] === EMPTY) {
+                    level[y][x] = TARGET;
+                    itemsPlaced++;
+                }
+            }
+            
+            // Ensure there's a path between elements
+            ensureAccessibility(level);
+            
+            return level;
+        }
+
+        function ensureAccessibility(level) {
+            // Simple path clearing - ensure there's space around blocks and targets
+            for (let y = 1; y < level.length - 1; y++) {
+                for (let x = 1; x < level[y].length - 1; x++) {
+                    if (level[y][x] === BLOCK || level[y][x] === TARGET) {
+                        // Clear at least one adjacent cell
+                        if (level[y-1][x] === WALL && level[y+1][x] === WALL) {
+                            level[y-1][x] = EMPTY;
+                        }
+                        if (level[y][x-1] === WALL && level[y][x+1] === WALL) {
+                            level[y][x-1] = EMPTY;
+                        }
+                    }
+                }
+            }
+        }
 
         function initializeGame() {
             blocks = [];
             targets = [];
-            currentLevel = JSON.parse(JSON.stringify(levels[currentLevelNumber - 1]));
+            currentLevel = generateLevel();
             
             document.getElementById('levelNumber').textContent = currentLevelNumber;
             
@@ -267,17 +295,8 @@
             }, 0);
             
             if (blocksOnTarget === blocks.length && blocksOnTarget === targets.length) {
-                setTimeout(() => {
-                    if (currentLevelNumber < levels.length) {
-                        alert(`Level ${currentLevelNumber} Complete! Starting next level...`);
-                        currentLevelNumber++;
-                        initializeGame();
-                    } else {
-                        alert('Congratulations! You\'ve completed all levels!');
-                        currentLevelNumber = 1;
-                        initializeGame();
-                    }
-                }, 100);
+                currentLevelNumber++;
+                initializeGame();
             }
         }
 
