@@ -1,13 +1,37 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Block Puzzle Game</title>
+    <title>Zelda-style Puzzle Game</title>
     <style>
         .game-container {
             display: flex;
             flex-direction: column;
             align-items: center;
             font-family: Arial, sans-serif;
+        }
+        
+        .header {
+            width: 100%;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px;
+            box-sizing: border-box;
+        }
+        
+        .home-button {
+            padding: 10px 20px;
+            background: #e74c3c;
+            border: none;
+            border-radius: 5px;
+            color: white;
+            cursor: pointer;
+            text-decoration: none;
+            font-size: 16px;
+        }
+        
+        .home-button:hover {
+            background: #c0392b;
         }
         
         .game-grid {
@@ -78,7 +102,10 @@
 </head>
 <body>
     <div class="game-container">
-        <h1>Block Puzzle Game</h1>
+        <div class="header">
+            <h1>Zelda-style Puzzle Game</h1>
+            <a href="index.html" class="home-button">Home</a>
+        </div>
         <div class="level-info">Level: <span id="levelNumber">1</span></div>
         <p>Use arrow keys or buttons to move. Push blocks onto green targets!</p>
         <div class="game-grid" id="gameGrid"></div>
