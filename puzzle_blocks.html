@@ -191,25 +191,25 @@
             }
             
             // Place 2 blocks in valid positions
-            let itemsPlaced = 0;
-            while (itemsPlaced < 2) {
+            let blocksPlaced = 0;
+            while (blocksPlaced < 2) {
                 const x = 2 + Math.floor(Math.random() * (size-4));  // Keep away from borders
                 const y = 2 + Math.floor(Math.random() * (size-4));  // Keep away from borders
                 if (level[y][x] === EMPTY && isValidBlockPosition(x, y)) {
                     clearSpaceAround(x, y);
                     level[y][x] = BLOCK;
-                    itemsPlaced++;
+                    blocksPlaced++;
                 }
             }
             
             // Place 2 targets in accessible positions
-            itemsPlaced = 0;
-            while (itemsPlaced < 2) {
+            let targetsPlaced = 0;
+            while (targetsPlaced < 2) {
                 const x = 2 + Math.floor(Math.random() * (size-4));  // Keep away from borders
                 const y = 2 + Math.floor(Math.random() * (size-4));  // Keep away from borders
                 if (level[y][x] === EMPTY && isValidBlockPosition(x, y)) {
                     level[y][x] = TARGET;
-                    itemsPlaced++;
+                    targetsPlaced++;
                 }
             }
             
