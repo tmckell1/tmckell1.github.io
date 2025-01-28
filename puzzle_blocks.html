@@ -118,7 +118,7 @@
         </div>
     </div>
 
-    <script>
+<script>
         const EMPTY = 0;
         const WALL = 1;
         const PLAYER = 2;
@@ -143,66 +143,115 @@
                 level[i][size-1] = WALL;
             }
             
-            // Add random inner walls (25% chance per inner cell)
+            // Add random inner walls (20% chance per inner cell)
             for (let y = 2; y < size-2; y++) {
                 for (let x = 2; x < size-2; x++) {
-                    if (Math.random() < 0.25) {
+                    if (Math.random() < 0.2) {
                         level[y][x] = WALL;
                     }
                 }
             }
+
+            // Function to check if a position is valid for a block
+            function isValidBlockPosition(x, y) {
+                // Must have at least two adjacent empty spaces on different axes
+                let emptySpaces = {
+                    horizontal: 0,
+                    vertical: 0
+                };
+                
+                // Check horizontal spaces
+                if (level[y][x-1] === EMPTY) emptySpaces.horizontal++;
+                if (level[y][x+1] === EMPTY) emptySpaces.horizontal++;
+                
+                // Check vertical spaces
+                if (level[y-1][x] === EMPTY) emptySpaces.vertical++;
+                if (level[y+1][x] === EMPTY) emptySpaces.vertical++;
+                
+                return emptySpaces.horizontal >= 1 && emptySpaces.vertical >= 1;
+            }
+
+            // Function to ensure space around a position
+            function clearSpaceAround(x, y) {
+                // Clear immediate adjacent cells
+                if (level[y-1][x] === WALL) level[y-1][x] = EMPTY;
+                if (level[y+1][x] === WALL) level[y+1][x] = EMPTY;
+                if (level[y][x-1] === WALL) level[y][x-1] = EMPTY;
+                if (level[y][x+1] === WALL) level[y][x+1] = EMPTY;
+            }
             
-            // Place player in a random position
+            // Place player in a random position with clear space
             let playerPlaced = false;
             while (!playerPlaced) {
                 const x = 1 + Math.floor(Math.random() * (size-2));
                 const y = 1 + Math.floor(Math.random() * (size-2));
                 if (level[y][x] === EMPTY) {
+                    clearSpaceAround(x, y);
                     level[y][x] = PLAYER;
                     playerPos = { x, y };
                     playerPlaced = true;
                 }
             }
             
-            // Place 2 blocks and 2 targets
+            // Place 2 blocks in valid positions
             let itemsPlaced = 0;
             while (itemsPlaced < 2) {
                 const x = 1 + Math.floor(Math.random() * (size-2));
                 const y = 1 + Math.floor(Math.random() * (size-2));
-                if (level[y][x] === EMPTY) {
+                if (level[y][x] === EMPTY && isValidBlockPosition(x, y)) {
+                    clearSpaceAround(x, y);
                     level[y][x] = BLOCK;
                     itemsPlaced++;
                 }
             }
             
+            // Place 2 targets in accessible positions
             itemsPlaced = 0;
             while (itemsPlaced < 2) {
                 const x = 1 + Math.floor(Math.random() * (size-2));
                 const y = 1 + Math.floor(Math.random() * (size-2));
-                if (level[y][x] === EMPTY) {
+                if (level[y][x] === EMPTY && isValidBlockPosition(x, y)) {
                     level[y][x] = TARGET;
                     itemsPlaced++;
                 }
             }
             
-            // Ensure there's a path between elements
+            // Create paths between elements
             ensureAccessibility(level);
             
             return level;
         }
 
         function ensureAccessibility(level) {
-            // Simple path clearing - ensure there's space around blocks and targets
+            // Create paths between all important elements
             for (let y = 1; y < level.length - 1; y++) {
                 for (let x = 1; x < level[y].length - 1; x++) {
-                    if (level[y][x] === BLOCK || level[y][x] === TARGET) {
-                        // Clear at least one adjacent cell
-                        if (level[y-1][x] === WALL && level[y+1][x] === WALL) {
-                            level[y-1][x] = EMPTY;
-                        }
-                        if (level[y][x-1] === WALL && level[y][x+1] === WALL) {
+                    if (level[y][x] === BLOCK || level[y][x] === TARGET || level[y][x] === PLAYER) {
+                        // Ensure at least two adjacent sides are clear
+                        let clearedHorizontal = false;
+                        let clearedVertical = false;
+                        
+                        // Clear horizontal path
+                        if (Math.random() < 0.5) {
                             level[y][x-1] = EMPTY;
+                            clearedHorizontal = true;
+                        } else {
+                            level[y][x+1] = EMPTY;
+                            clearedHorizontal = true;
                         }
+                        
+                        // Clear vertical path
+                        if (Math.random() < 0.5) {
+                            level[y-1][x] = EMPTY;
+                            clearedVertical = true;
+                        } else {
+                            level[y+1][x] = EMPTY;
+                            clearedVertical = true;
+                        }
+                        
+                        // Ensure at least one path in each direction
+                        if (!clearedHorizontal) level[y][x-1] = EMPTY;
+                        if (!clearedVertical) level[y-1][x] = EMPTY;
                     }
                 }
             }
