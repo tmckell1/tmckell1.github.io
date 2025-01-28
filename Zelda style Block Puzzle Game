@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Zelda-style Puzzle Game</title>
+    <style>
+        .game-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            font-family: Arial, sans-serif;
+        }
+        
+        .game-grid {
+            display: grid;
+            grid-template-columns: repeat(8, 50px);
+            grid-template-rows: repeat(8, 50px);
+            gap: 1px;
+            background: #2c3e50;
+            padding: 10px;
+            border-radius: 5px;
+        }
+        
+        .cell {
+            width: 50px;
+            height: 50px;
+            background: #34495e;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        .wall {
+            background: #7f8c8d;
+        }
+        
+        .player {
+            background: #e74c3c;
+            border-radius: 50%;
+        }
+        
+        .block {
+            background: #f1c40f;
+        }
+        
+        .target {
+            background: #27ae60;
+        }
+        
+        .block.on-target {
+            background: #f39c12;
+        }
+        
+        .controls {
+            margin-top: 20px;
+            text-align: center;
+        }
+        
+        button {
+            padding: 10px 20px;
+            margin: 0 5px;
+            background: #3498db;
+            border: none;
+            border-radius: 5px;
+            color: white;
+            cursor: pointer;
+        }
+        
+        button:hover {
+            background: #2980b9;
+        }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <h1>Zelda-style Puzzle Game</h1>
+        <p>Use arrow keys or buttons to move. Push blocks onto green targets!</p>
+        <div class="game-grid" id="gameGrid"></div>
+        <div class="controls">
+            <button onclick="move('up')">↑</button><br>
+            <button onclick="move('left')">←</button>
+            <button onclick="move('down')">↓</button>
+            <button onclick="move('right')">→</button>
+            <button onclick="resetLevel()">Reset Level</button>
+        </div>
+    </div>
+
+    <script>
+        const EMPTY = 0;
+        const WALL = 1;
+        const PLAYER = 2;
+        const BLOCK = 3;
+        const TARGET = 4;
+
+        let playerPos = { x: 1, y: 1 };
+        let blocks = [];
+        let targets = [];
+        
+        // Level design
+        const level = [
+            [1, 1, 1, 1, 1, 1, 1, 1],
+            [1, 2, 0, 0, 0, 0, 0, 1],
+            [1, 0, 0, 3, 0, 0, 0, 1],
+            [1, 0, 1, 0, 1, 0, 0, 1],
+            [1, 0, 0, 0, 0, 0, 4, 1],
+            [1, 0, 3, 0, 0, 4, 0, 1],
+            [1, 0, 0, 0, 0, 0, 0, 1],
+            [1, 1, 1, 1, 1, 1, 1, 1]
+        ];
+        
+        let currentLevel = JSON.parse(JSON.stringify(level));
+
+        function initializeGame() {
+            blocks = [];
+            targets = [];
+            
+            for (let y = 0; y < level.length; y++) {
+                for (let x = 0; x < level[y].length; x++) {
+                    if (level[y][x] === PLAYER) {
+                        playerPos = { x, y };
+                    } else if (level[y][x] === BLOCK) {
+                        blocks.push({ x, y });
+                    } else if (level[y][x] === TARGET) {
+                        targets.push({ x, y });
+                    }
+                }
+            }
+            
+            renderGame();
+        }
+
+        function renderGame() {
+            const gameGrid = document.getElementById('gameGrid');
+            gameGrid.innerHTML = '';
+            
+            for (let y = 0; y < currentLevel.length; y++) {
+                for (let x = 0; x < currentLevel[y].length; x++) {
+                    const cell = document.createElement('div');
+                    cell.className = 'cell';
+                    
+                    if (currentLevel[y][x] === WALL) {
+                        cell.classList.add('wall');
+                    } else if (x === playerPos.x && y === playerPos.y) {
+                        cell.classList.add('player');
+                    } else if (currentLevel[y][x] === BLOCK) {
+                        cell.classList.add('block');
+                        if (isOnTarget(x, y)) {
+                            cell.classList.add('on-target');
+                        }
+                    } else if (currentLevel[y][x] === TARGET) {
+                        cell.classList.add('target');
+                    }
+                    
+                    gameGrid.appendChild(cell);
+                }
+            }
+            
+            checkWinCondition();
+        }
+
+        function isOnTarget(x, y) {
+            return targets.some(target => target.x === x && target.y === y);
+        }
+
+        function move(direction) {
+            const movements = {
+                up: { x: 0, y: -1 },
+                down: { x: 0, y: 1 },
+                left: { x: -1, y: 0 },
+                right: { x: 1, y: 0 }
+            };
+            
+            const movement = movements[direction];
+            const newPos = {
+                x: playerPos.x + movement.x,
+                y: playerPos.y + movement.y
+            };
+            
+            if (canMove(newPos, movement)) {
+                currentLevel[playerPos.y][playerPos.x] = EMPTY;
+                playerPos = newPos;
+                currentLevel[playerPos.y][playerPos.x] = PLAYER;
+                renderGame();
+            }
+        }
+
+        function canMove(newPos, movement) {
+            if (currentLevel[newPos.y][newPos.x] === WALL) {
+                return false;
+            }
+            
+            if (currentLevel[newPos.y][newPos.x] === BLOCK) {
+                const beyondBlock = {
+                    x: newPos.x + movement.x,
+                    y: newPos.y + movement.y
+                };
+                
+                if (currentLevel[beyondBlock.y][beyondBlock.x] === EMPTY ||
+                    currentLevel[beyondBlock.y][beyondBlock.x] === TARGET) {
+                    currentLevel[beyondBlock.y][beyondBlock.x] = BLOCK;
+                    currentLevel[newPos.y][newPos.x] = EMPTY;
+                    return true;
+                }
+                return false;
+            }
+            
+            return true;
+        }
+
+        function checkWinCondition() {
+            const allBlocksOnTarget = blocks.every(block => {
+                const blockInLevel = currentLevel.some((row, y) => 
+                    row.some((cell, x) => 
+                        cell === BLOCK && isOnTarget(x, y)
+                    )
+                );
+                return blockInLevel;
+            });
+            
+            if (allBlocksOnTarget) {
+                setTimeout(() => {
+                    alert('Congratulations! You solved the puzzle!');
+                    resetLevel();
+                }, 100);
+            }
+        }
+
+        function resetLevel() {
+            currentLevel = JSON.parse(JSON.stringify(level));
+            initializeGame();
+        }
+
+        // Initialize the game when the page loads
+        window.onload = initializeGame;
+
+        // Add keyboard controls
+        document.addEventListener('keydown', (e) => {
+            const keyActions = {
+                'ArrowUp': 'up',
+                'ArrowDown': 'down',
+                'ArrowLeft': 'left',
+                'ArrowRight': 'right'
+            };
+            
+            if (keyActions[e.key]) {
+                e.preventDefault();
+                move(keyActions[e.key]);
+            }
+        });
+    </script>
+</body>
+</html>
