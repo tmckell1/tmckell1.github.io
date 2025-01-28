@@ -33,8 +33,8 @@ function generateLevel() {
         }
     }
 
-    // Check if a block position is valid
-    function isValidBlockPosition(x, y) {
+    // Check if a position is valid for placement
+    function isValidPosition(x, y) {
         if (x <= 1 || x >= size-2 || y <= 1 || y >= size-2) return false;
         if (level[y][x] !== EMPTY) return false;
         let emptySpaces = { horizontal: 0, vertical: 0 };
@@ -56,7 +56,8 @@ function generateLevel() {
     // Place the player in a random empty position
     let playerPlaced = false;
     while (!playerPlaced) {
-        const x = 2 + Math.floor(Math.random() * (size-4)), y = 2 + Math.floor(Math.random() * (size-4));
+        const x = 2 + Math.floor(Math.random() * (size-4));
+        const y = 2 + Math.floor(Math.random() * (size-4));
         if (level[y][x] === EMPTY) {
             clearSpaceAround(x, y);
             level[y][x] = PLAYER;
@@ -66,24 +67,37 @@ function generateLevel() {
     }
 
     // Place blocks and targets in random valid positions
-    let blocksPlaced = 0, targetsPlaced = 0, numBlocksAndTargets = 2;
-    while (blocksPlaced < numBlocksAndTargets && targetsPlaced < numBlocksAndTargets) {
-        // Place a block
-        let blockX = 2 + Math.floor(Math.random() * (size - 4));
-        let blockY = 2 + Math.floor(Math.random() * (size - 4));
-        if (level[blockY][blockX] === EMPTY && isValidBlockPosition(blockX, blockY)) {
-            level[blockY][blockX] = BLOCK;
-            blocksPlaced++;
-        }
-    
-        // Place a target
-        let targetX = 2 + Math.floor(Math.random() * (size - 4));
-        let targetY = 2 + Math.floor(Math.random() * (size - 4));
-        if (level[targetY][targetX] === EMPTY && isValidBlockPosition(targetX, targetY)) {
-            level[targetY][targetX] = TARGET;
-            targetsPlaced++;
+    const numBlocksAndTargets = 2;
+    const blockPositions = [];
+    const targetPositions = [];
+
+    // Place blocks
+    while (blockPositions.length < numBlocksAndTargets) {
+        const x = 2 + Math.floor(Math.random() * (size-4));
+        const y = 2 + Math.floor(Math.random() * (size-4));
+        
+        if (level[y][x] === EMPTY && isValidPosition(x, y)) {
+            level[y][x] = BLOCK;
+            blockPositions.push({x, y});
+            clearSpaceAround(x, y);
         }
     }
+
+    // Place targets
+    while (targetPositions.length < numBlocksAndTargets) {
+        const x = 2 + Math.floor(Math.random() * (size-4));
+        const y = 2 + Math.floor(Math.random() * (size-4));
+        
+        if (level[y][x] === EMPTY && isValidPosition(x, y)) {
+            level[y][x] = TARGET;
+            targetPositions.push({x, y});
+            clearSpaceAround(x, y);
+        }
+    }
+
+    // Store the positions
+    blocks = blockPositions;
+    targets = targetPositions;
 
     // Ensure the level is accessible
     ensureAccessibility(level);
@@ -97,16 +111,13 @@ function isOnTarget(x, y) {
 
 // Check win condition
 function checkWinCondition() {
-    const blocksOnTarget = blocks.reduce((count, _) => {
-        let blockCount = 0;
-        currentLevel.forEach((row, y) => {
-            row.forEach((cell, x) => {
-                if (cell === BLOCK && isOnTarget(x, y)) blockCount++;
-            });
-        });
-        return blockCount;
-    }, 0);
-    if (blocksOnTarget === blocks.length && blocksOnTarget === targets.length) initializeGame();
+    let blocksOnTarget = 0;
+    blocks.forEach(block => {
+        if (isOnTarget(block.x, block.y)) blocksOnTarget++;
+    });
+    if (blocksOnTarget === blocks.length && blocksOnTarget === targets.length) {
+        initializeGame();
+    }
 }
 
 // Reset the level
@@ -136,37 +147,41 @@ function renderGame() {
 
 // Initialize the game
 function initializeGame() {
-    blocks = [], targets = [], currentLevel = generateLevel();
-    for (let y = 0; y < currentLevel.length; y++) {
-        for (let x = 0; x < currentLevel[y].length; x++) {
-            if (currentLevel[y][x] === PLAYER) playerPos = { x, y };
-            else if (currentLevel[y][x] === BLOCK) blocks.push({ x, y });
-            else if (currentLevel[y][x] === TARGET) targets.push({ x, y });
-        }
-    }
+    blocks = [];
+    targets = [];
+    currentLevel = generateLevel();
     renderGame();
 }
 
 // Check if the player can move to a new position
 function canMove(newPos, movement) {
-    if ([WALL, TARGET].includes(currentLevel[newPos.y][newPos.x])) return false;
+    if (currentLevel[newPos.y][newPos.x] === WALL) return false;
     if (currentLevel[newPos.y][newPos.x] === BLOCK) {
         const beyondBlock = { x: newPos.x + movement.x, y: newPos.y + movement.y };
-        if (isOnTarget(newPos.x, newPos.y)) return false;
-        if ([EMPTY, TARGET].includes(currentLevel[beyondBlock.y][beyondBlock.x])) {
-            currentLevel[beyondBlock.y][beyondBlock.x] = BLOCK;
-            currentLevel[newPos.y][newPos.x] = EMPTY;
-            return true;
+        if (currentLevel[beyondBlock.y][beyondBlock.x] === WALL || 
+            currentLevel[beyondBlock.y][beyondBlock.x] === BLOCK) return false;
+        currentLevel[beyondBlock.y][beyondBlock.x] = BLOCK;
+        currentLevel[newPos.y][newPos.x] = EMPTY;
+        // Update block position in blocks array
+        const blockIndex = blocks.findIndex(b => b.x === newPos.x && b.y === newPos.y);
+        if (blockIndex !== -1) {
+            blocks[blockIndex] = {x: beyondBlock.x, y: beyondBlock.y};
         }
-        return false;
+        return true;
     }
     return true;
 }
 
 // Move the player
 function move(direction) {
-    const movements = { up: { x: 0, y: -1 }, down: { x: 0, y: 1 }, left: { x: -1, y: 0 }, right: { x: 1, y: 0 } };
-    const movement = movements[direction], newPos = { x: playerPos.x + movement.x, y: playerPos.y + movement.y };
+    const movements = {
+        up: { x: 0, y: -1 },
+        down: { x: 0, y: 1 },
+        left: { x: -1, y: 0 },
+        right: { x: 1, y: 0 }
+    };
+    const movement = movements[direction];
+    const newPos = { x: playerPos.x + movement.x, y: playerPos.y + movement.y };
     if (canMove(newPos, movement)) {
         currentLevel[playerPos.y][playerPos.x] = EMPTY;
         playerPos = newPos;
@@ -180,7 +195,12 @@ window.onload = initializeGame;
 
 // Add event listener for keydown events
 document.addEventListener('keydown', (e) => {
-    const keyActions = { 'ArrowUp': 'up', 'ArrowDown': 'down', 'ArrowLeft': 'left', 'ArrowRight': 'right' };
+    const keyActions = {
+        'ArrowUp': 'up',
+        'ArrowDown': 'down',
+        'ArrowLeft': 'left',
+        'ArrowRight': 'right'
+    };
     if (keyActions[e.key]) {
         e.preventDefault();
         move(keyActions[e.key]);
