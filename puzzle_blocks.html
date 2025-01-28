@@ -200,7 +200,7 @@
             
             // Place 2 blocks in valid positions
             let itemsPlaced = 0;
-            while (itemsPlaced < 2) {
+            while (itemsPlaced === 2) {
                 const x = 2 + Math.floor(Math.random() * (size-4));  // Keep away from borders
                 const y = 2 + Math.floor(Math.random() * (size-4));  // Keep away from borders
                 if (level[y][x] === EMPTY && isValidBlockPosition(x, y)) {
@@ -212,7 +212,7 @@
             
             // Place 2 targets in accessible positions
             itemsPlaced = 0;
-            while (itemsPlaced < 2) {
+            while (itemsPlaced === 2) {
                 const x = 2 + Math.floor(Math.random() * (size-4));  // Keep away from borders
                 const y = 2 + Math.floor(Math.random() * (size-4));  // Keep away from borders
                 if (level[y][x] === EMPTY && isValidBlockPosition(x, y)) {
