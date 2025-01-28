@@ -79,12 +79,6 @@
             text-align: center;
         }
         
-        .level-info {
-            margin: 10px 0;
-            font-size: 1.2em;
-            color: #2c3e50;
-        }
-        
         button {
             padding: 10px 20px;
             margin: 0 5px;
@@ -106,7 +100,6 @@
             <h1>Zelda-style Puzzle Game</h1>
             <a href="index.html" class="home-button">Home</a>
         </div>
-        <div class="level-info">Level: <span id="levelNumber">1</span></div>
         <p>Use arrow keys or buttons to move. Push blocks onto green targets!</p>
         <div class="game-grid" id="gameGrid"></div>
         <div class="controls">
@@ -128,7 +121,6 @@
         let playerPos = { x: 1, y: 1 };
         let blocks = [];
         let targets = [];
-        let currentLevelNumber = 1;
         let currentLevel;
 
         function generateLevel() {
@@ -200,7 +192,7 @@
             
             // Place 2 blocks in valid positions
             let itemsPlaced = 0;
-            while (itemsPlaced === 2) {
+            while (itemsPlaced < 2) {
                 const x = 2 + Math.floor(Math.random() * (size-4));  // Keep away from borders
                 const y = 2 + Math.floor(Math.random() * (size-4));  // Keep away from borders
                 if (level[y][x] === EMPTY && isValidBlockPosition(x, y)) {
@@ -212,7 +204,7 @@
             
             // Place 2 targets in accessible positions
             itemsPlaced = 0;
-            while (itemsPlaced === 2) {
+            while (itemsPlaced < 2) {
                 const x = 2 + Math.floor(Math.random() * (size-4));  // Keep away from borders
                 const y = 2 + Math.floor(Math.random() * (size-4));  // Keep away from borders
                 if (level[y][x] === EMPTY && isValidBlockPosition(x, y)) {
@@ -266,9 +258,7 @@
             blocks = [];
             targets = [];
             currentLevel = generateLevel();
-            
-            document.getElementById('levelNumber').textContent = currentLevelNumber;
-            
+                        
             for (let y = 0; y < currentLevel.length; y++) {
                 for (let x = 0; x < currentLevel[y].length; x++) {
                     if (currentLevel[y][x] === PLAYER) {
@@ -376,7 +366,6 @@
             }, 0);
             
             if (blocksOnTarget === blocks.length && blocksOnTarget === targets.length) {
-                currentLevelNumber++;
                 initializeGame();
             }
         }
