@@ -68,15 +68,20 @@ function generateLevel() {
     // Place blocks and targets in random valid positions
     let blocksPlaced = 0, targetsPlaced = 0, numBlocksAndTargets = 2;
     while (blocksPlaced < numBlocksAndTargets && targetsPlaced < numBlocksAndTargets) {
-        const x = 2 + Math.floor(Math.random() * (size-4)), y = 2 + Math.floor(Math.random() * (size-4));
-        if (level[y][x] === EMPTY && isValidBlockPosition(x, y)) {
-            if (blocksPlaced < numBlocksAndTargets) {
-                level[y][x] = BLOCK;
-                blocksPlaced++;
-            } else if (targetsPlaced < numBlocksAndTargets) {
-                level[y][x] = TARGET;
-                targetsPlaced++;
-            }
+        // Place a block
+        let blockX = 2 + Math.floor(Math.random() * (size - 4));
+        let blockY = 2 + Math.floor(Math.random() * (size - 4));
+        if (level[blockY][blockX] === EMPTY && isValidBlockPosition(blockX, blockY)) {
+            level[blockY][blockX] = BLOCK;
+            blocksPlaced++;
+        }
+    
+        // Place a target
+        let targetX = 2 + Math.floor(Math.random() * (size - 4));
+        let targetY = 2 + Math.floor(Math.random() * (size - 4));
+        if (level[targetY][targetX] === EMPTY && isValidBlockPosition(targetX, targetY)) {
+            level[targetY][targetX] = TARGET;
+            targetsPlaced++;
         }
     }
 
