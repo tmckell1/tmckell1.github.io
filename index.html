@@ -2,10 +2,19 @@
 <html>
 <head>
     <title>My Games</title>
+    <link rel="stylesheet" href="puzzle_blocks_styles.css">
+    <style>
+        .header {
+            display: inline;
+        }
+    </style>
 </head>
 <body>
-    <h1>Welcome to My Puzzle Games</h1>
-    <p>Click the link below to go to the next level:</p>
-    <a href="puzzle_blocks.html">Block Puzzle</a>
+    <div class="game-container">
+        <div class="header">
+            <h1>Welcome to My Puzzle Games</h1>
+            <button onclick="location.href='puzzle_blocks.html'">Block Puzzle</button>
+        </div>
+    </div>
 </body>
 </html>
