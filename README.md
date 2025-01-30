@@ -4,16 +4,16 @@ A browser-based puzzle game inspired by block-pushing puzzles from The Legend of
 
 ## Features
 
-- **Procedurally Generated Levels**: Each level is uniquely generated with:
+- **Levels**:
   - Random player starting position
-  - Two blocks and two corresponding targets
-  - Randomized wall placements
   - Guaranteed solvable layouts
+  - Reset button to restart current level
   
 - **Intuitive Controls**:
   - Arrow keys for keyboard control
   - On-screen buttons for touch/mouse input
   - Smooth player movement
+  - Spacebar to reset level
   
 - **Game Mechanics**:
   - Push blocks onto target spaces
@@ -21,12 +21,6 @@ A browser-based puzzle game inspired by block-pushing puzzles from The Legend of
   - Cannot push multiple blocks at once
   - Blocks cannot be pushed through walls
   
-- **Progressive Gameplay**:
-  - Infinite levels
-  - Automatic level progression upon completion
-  - Level counter to track progress
-  - Reset button to restart current level
-
 ## Installation
 
 1. Download all files to a local directory
@@ -67,9 +61,13 @@ The game can be customized by modifying the following parameters:
 
 - Grid size (currently 8x8)
 - Number of blocks and targets
-- Wall density (currently 25% chance per inner cell)
 - Color scheme (via CSS)
 - Movement controls
+
+## Future Features
+- Procedually generate levels while ensuring solvability
+- Add difficulty setting
+- Add event listener so you can 'pull' blocks as well
 
 ## Contributing
 
