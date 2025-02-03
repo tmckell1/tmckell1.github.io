@@ -1,0 +1,26 @@
+{
+  "name": "tmckell1.github.io",
+  "version": "1.0.0",
+  "description": "A browser-based puzzle game inspired by block-pushing puzzles from The Legend of Zelda series. Players must strategically push blocks onto target spaces while navigating through procedurally generated levels.",
+  "main": "puzzle_blocks_script.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/tmckell1/tmckell1.github.io.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/tmckell1/tmckell1.github.io/issues"
+  },
+  "homepage": "https://github.com/tmckell1/tmckell1.github.io#readme",
+  "dependencies": {
+    "@azure/identity": "^4.6.0",
+    "@azure/keyvault-secrets": "^4.9.0",
+    "axios": "^1.7.9",
+    "express": "^4.21.2"
+  }
+}

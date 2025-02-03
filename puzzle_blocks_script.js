@@ -55,6 +55,46 @@ const LEVELS = [
     }
 ];
 
+function generateRandomLevel(gridSize) {
+    const level = { // Create a new level object
+        grid: Array(gridSize).fill().map(() => Array(gridSize).fill(EMPTY)), // Create a 2D array filled with EMPTY cells
+        playerPos: { x: 0, y: 0 }, // Set the player position to the top-left corner
+        blocks: [], // Initialize an empty array to store block positions
+        targets: [] // Initialize an empty array to store target positions
+    };
+
+    // Place walls around the grid
+    for (let i = 0; i < gridSize; i++) { // Iterate over each cell in the first and last rows and columns
+        level.grid[0][i] = WALL; // Set the cell in the first row to WALL
+        level.grid[gridSize - 1][i] = WALL; // Set the cell in the last row to WALL
+        level.grid[i][0] = WALL; // Set the cell in the first column to WALL
+        level.grid[i][gridSize - 1] = WALL; // Set the cell in the last column to WALL
+    }
+
+    // Randomly place the player
+    level.playerPos = { x: Math.floor(Math.random() * (gridSize - 2)) + 1, y: Math.floor(Math.random() * (gridSize - 2)) + 1 }; // Set the player position to a random position inside the grid
+    level.grid[level.playerPos.y][level.playerPos.x] = PLAYER; // Set the cell at the player position to PLAYER
+
+    // Randomly place blocks and targets
+    const numBlocks = Math.floor(Math.random() * 3) + 1; // 1 to 3 blocks
+    for (let i = 0; i < numBlocks; i++) { // Iterate over the number of blocks
+        let blockPos, targetPos; // Initialize block and target positions
+        do { // Randomly place blocks and targets until an empty cell is found
+            blockPos = { x: Math.floor(Math.random() * (gridSize - 2)) + 1, y: Math.floor(Math.random() * (gridSize - 2)) + 1 }; // Set the block position to a random position inside the grid
+        } while (level.grid[blockPos.y][blockPos.x] !== EMPTY); // Repeat until an empty cell is found
+        level.blocks.push(blockPos); // Add the block position to the blocks array
+        level.grid[blockPos.y][blockPos.x] = BLOCK; // Set the cell at the block position to BLOCK
+
+        do { // Randomly place targets until an empty cell is found
+            targetPos = { x: Math.floor(Math.random() * (gridSize - 2)) + 1, y: Math.floor(Math.random() * (gridSize - 2)) + 1 }; // Set the target position to a random position inside the grid
+        } while (level.grid[targetPos.y][targetPos.x] !== EMPTY); // Repeat until an empty cell is found
+        level.targets.push(targetPos); // Add the target position to the targets array
+        level.grid[targetPos.y][targetPos.x] = TARGET; // Set the cell at the target position to TARGET
+    }
+
+    return level; // Return the randomly generated level
+}
+
 // Initialize game with first level
 let currentLevelIndex = 0;
 let currentLevel, playerPos, blocks, targets; // Global variables to store the current level, player position, block positions, and target positions
@@ -68,6 +108,22 @@ function initializeLevel(levelIndex) {
     document.getElementById('level-display').innerHTML = `Current Level: ${levelIndex + 1}`; // Update the level display
     renderGame();
 }
+
+// // trying to use random generated levels
+// function initializeLevel(levelIndex) {
+//     let level;
+//     if (useRandomLevels) {
+//         level = generateRandomLevel(8); // Generate a random level with a grid size of 8x8
+//     } else {
+//         level = LEVELS[levelIndex];
+//     }
+//     currentLevel = level.grid.map(row => [...row]); // Create a deep copy of the level grid array
+//     playerPos = { ...level.playerPos }; // Create a deep copy of the player position
+//     blocks = level.blocks.map(block => ({...block})); // Create a deep copy of the block positions
+//     targets = level.targets.map(target => ({...target})); // Create a deep copy of the target positions
+//     document.getElementById('level-display').innerHTML = `Current Level: ${levelIndex + 1}`; // Update the level display
+//     renderGame();
+// }
 
 function initializeGame() {
     initializeLevel(currentLevelIndex);
@@ -119,8 +175,6 @@ function renderGame() {
     }
     checkWinCondition();
 }
-
-
 
 // Check if the player can move to a new position
 function canMove(newPos, movement) { // newPos is the new position the player is trying to move to, movement is the direction of movement

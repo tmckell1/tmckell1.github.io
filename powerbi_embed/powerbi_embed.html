@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Power BI Embed Testing</title>
+    <link rel="stylesheet" href="puzzle_blocks_styles.css">
+    <script src="https://cdn.jsdelivr.net/npm/powerbi-client@2.18.0/dist/powerbi.js"></script>
+</head>
+<body>
+    <div id="reportContainer" style="height:600px;width:800px;">
+        <div class="header">
+            <h1>Power BI Embed Testing</h1>
+            <a href="index.html" class="home-button">Home</a>
+        </div>
+    </div>
+    <script>
+
+        async function getAccessToken() {
+            const response = await fetch('http://localhost:3000/getAccessToken');
+            const data = await response.json();
+            return data.accessToken;
+        }
+
+        var models = window['powerbi-client'].models;
+        var embedConfiguration = {
+            type: 'report',
+            id: '521ea614-f46b-42c4-b3d8-e1c8953d313e',
+            embedUrl: 'https://app.powerbi.com/reportEmbed?reportId=521ea614-f46b-42c4-b3d8-e1c8953d313e',
+            accessToken: 'YOUR_ACCESS_TOKEN',
+            settings: {
+                filterPaneEnabled: false,
+                navContentPaneEnabled: false
+            }
+        };
+
+        var reportContainer = document.getElementById('reportContainer');
+        var report = powerbi.embed(reportContainer, embedConfiguration);
+
+        // Function to update parameters
+        function updateParameters(parameterName, parameterValue) {
+            report.setFilters([{
+                $schema: "http://powerbi.com/product/schema#basic",
+                target: {
+                    table: "YourTable",
+                    column: parameterName
+                },
+                operator: "In",
+                values: [parameterValue]
+            }]);
+        }
+
+        // Example usage
+        updateParameters('YourParameterName', 'NewValue');
+    </script>
+</body>
+</html>
