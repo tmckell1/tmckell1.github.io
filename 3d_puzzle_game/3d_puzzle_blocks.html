@@ -1,0 +1,679 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>3D Block Pusher</title>
+    <style>
+        body { 
+            margin: 0;
+            overflow: hidden;
+            font-family: Arial, sans-serif;
+        }
+        canvas { 
+            display: block;
+        }
+        #ui-container {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: rgba(0, 0, 0, 0.5);
+            color: white;
+            padding: 10px 20px;
+            border-radius: 5px;
+            display: flex;
+            gap: 20px;
+            align-items: center;
+        }
+        #level-display {
+            font-size: 18px;
+        }
+        button {
+            background-color: #4285f4;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        button:hover {
+            background-color: #3367d6;
+        }
+        #instructions {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            background-color: rgba(0, 0, 0, 0.5);
+            color: white;
+            padding: 10px;
+            border-radius: 5px;
+            max-width: 300px;
+        }
+    </style>
+</head>
+<body>
+    <div id="instructions">
+        <h3>How to Play:</h3>
+        <p>- Use arrow keys to move</p>
+        <p>- Push blocks onto targets</p>
+        <p>- Press Space to reset level</p>
+        <p>- Press WASD to rotate camera</p>
+        <p>- Use mouse scroll to zoom</p>
+    </div>
+    <div id="ui-container">
+        <div id="level-display">Current Level: 1</div>
+        <button id="reset-button">Reset Level</button>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/0.155.0/three.min.js"></script>
+    <script>
+        // Define constants for different cell types
+        const EMPTY = 0, WALL = 1, PLAYER = 2, BLOCK = 3, TARGET = 4;
+
+        // Store all predefined levels
+        const LEVELS = [
+            // Level 1 - Simple U shape, one box to push around a corner
+            {
+                grid: [
+                    [1, 1, 1, 1, 1, 1, 1, 1],
+                    [1, 0, 0, 0, 0, 0, 0, 1],
+                    [1, 0, 0, 0, 0, 0, 0, 1],
+                    [1, 0, 2, 3, 0, 0, 0, 1],
+                    [1, 0, 0, 1, 1, 0, 0, 1],
+                    [1, 0, 0, 0, 1, 0, 0, 1],
+                    [1, 0, 0, 4, 1, 0, 0, 1],
+                    [1, 1, 1, 1, 1, 1, 1, 1]
+                ],
+                playerPos: { x: 2, y: 3 },
+                blocks: [{ x: 3, y: 3 }],
+                targets: [{ x: 3, y: 6 }]
+            },
+            
+            // Level 2 - Two boxes, simple parallel pushing
+            {
+                grid: [
+                    [1, 1, 1, 1, 1, 1, 1, 1],
+                    [1, 0, 0, 1, 0, 0, 0, 1],
+                    [1, 0, 2, 0, 0, 4, 0, 1],
+                    [1, 0, 3, 0, 0, 4, 0, 1],
+                    [1, 0, 3, 1, 0, 0, 0, 1],
+                    [1, 0, 0, 0, 0, 0, 0, 1],
+                    [1, 0, 0, 0, 0, 0, 0, 1],
+                    [1, 1, 1, 1, 1, 1, 1, 1]
+                ],
+                playerPos: { x: 2, y: 2 },
+                blocks: [{ x: 2, y: 3 }, { x: 2, y: 4 }],
+                targets: [{ x: 5, y: 2 }, { x: 5, y: 3 }]
+            },
+            
+            // Level 3 - Three boxes with some tricky maneuvering
+            {
+                grid: [
+                    [1, 1, 1, 1, 1, 1, 1, 1],
+                    [1, 4, 4, 4, 0, 0, 0, 1],
+                    [1, 0, 0, 1, 0, 3, 0, 1],
+                    [1, 0, 3, 0, 0, 0, 0, 1],
+                    [1, 0, 0, 1, 0, 3, 0, 1],
+                    [1, 0, 2, 1, 0, 0, 0, 1],
+                    [1, 0, 0, 0, 0, 0, 0, 1],
+                    [1, 1, 1, 1, 1, 1, 1, 1]
+                ],
+                playerPos: { x: 2, y: 5 },
+                blocks: [{ x: 5, y: 2 }, { x: 2, y: 3 }, { x: 5, y: 4 }],
+                targets: [{ x: 1, y: 1 }, { x: 2, y: 1 }, { x: 3, y: 1 }]
+            }
+        ];
+
+        // Global variables
+        let currentLevelIndex = 0;
+        let currentLevel, playerPos, blocks, targets;
+        let scene, camera, renderer, player, playerGroup, blockObjects = [], targetObjects = [];
+        let cameraRotation = 0;
+        let cameraDistance = 15;
+        let cameraHeight = 10;
+        let lastDirection = "down"; // To track which way the player is facing
+
+        // Set up Three.js scene
+        function initThreeJS() {
+            console.log("Initializing Three.js scene");
+            
+            // Create scene
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color(0x87CEEB); // Sky blue background
+            
+            // Create camera
+            camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
+            
+            // Create renderer
+            renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.shadowMap.enabled = true;
+            document.body.appendChild(renderer.domElement);
+            
+            // Handle window resize
+            window.addEventListener('resize', onWindowResize, false);
+            
+            // Add event listeners for camera controls
+            document.addEventListener('wheel', onMouseWheel, false);
+
+            console.log("Three.js scene initialization complete");
+        }
+
+        // Create a human character model
+        function createHumanCharacter() {
+            // Create a group to hold all parts of the character
+            const characterGroup = new THREE.Group();
+            
+            // Create materials
+            const skinMaterial = new THREE.MeshStandardMaterial({ color: 0xF5D0A9 }); // Skin color
+            const shirtMaterial = new THREE.MeshStandardMaterial({ color: 0x3366CC }); // Blue shirt
+            const pantsMaterial = new THREE.MeshStandardMaterial({ color: 0x0A0A0A }); // Black pants
+            const hairMaterial = new THREE.MeshStandardMaterial({ color: 0x663300 }); // Brown hair
+            const shoeMaterial = new THREE.MeshStandardMaterial({ color: 0x773333 }); // Brown shoes
+            
+            // Create head
+            const head = new THREE.Mesh(
+                new THREE.SphereGeometry(0.15, 16, 16),
+                skinMaterial
+            );
+            head.position.y = 0.5;
+            head.castShadow = true;
+            characterGroup.add(head);
+            
+            // Create hair
+            const hair = new THREE.Mesh(
+                new THREE.SphereGeometry(0.16, 16, 8, 0, Math.PI * 2, 0, Math.PI / 2),
+                hairMaterial
+            );
+            hair.position.y = 0.57;
+            hair.castShadow = true;
+            characterGroup.add(hair);
+            
+            // Create body (torso)
+            const torso = new THREE.Mesh(
+                new THREE.BoxGeometry(0.25, 0.3, 0.15),
+                shirtMaterial
+            );
+            torso.position.y = 0.3;
+            torso.castShadow = true;
+            characterGroup.add(torso);
+            
+            // Create arms
+            const leftArm = new THREE.Mesh(
+                new THREE.BoxGeometry(0.08, 0.3, 0.08),
+                shirtMaterial
+            );
+            leftArm.position.set(-0.17, 0.3, 0);
+            leftArm.castShadow = true;
+            characterGroup.add(leftArm);
+            
+            const rightArm = new THREE.Mesh(
+                new THREE.BoxGeometry(0.08, 0.3, 0.08),
+                shirtMaterial
+            );
+            rightArm.position.set(0.17, 0.3, 0);
+            rightArm.castShadow = true;
+            characterGroup.add(rightArm);
+            
+            // Create legs
+            const leftLeg = new THREE.Mesh(
+                new THREE.BoxGeometry(0.1, 0.3, 0.1),
+                pantsMaterial
+            );
+            leftLeg.position.set(-0.08, 0.05, 0);
+            leftLeg.castShadow = true;
+            characterGroup.add(leftLeg);
+            
+            const rightLeg = new THREE.Mesh(
+                new THREE.BoxGeometry(0.1, 0.3, 0.1),
+                pantsMaterial
+            );
+            rightLeg.position.set(0.08, 0.05, 0);
+            rightLeg.castShadow = true;
+            characterGroup.add(rightLeg);
+            
+            // Create shoes
+            const leftShoe = new THREE.Mesh(
+                new THREE.BoxGeometry(0.12, 0.07, 0.15),
+                shoeMaterial
+            );
+            leftShoe.position.set(-0.08, -0.15, 0.02);
+            leftShoe.castShadow = true;
+            characterGroup.add(leftShoe);
+            
+            const rightShoe = new THREE.Mesh(
+                new THREE.BoxGeometry(0.12, 0.07, 0.15),
+                shoeMaterial
+            );
+            rightShoe.position.set(0.08, -0.15, 0.02);
+            rightShoe.castShadow = true;
+            characterGroup.add(rightShoe);
+            
+            // Create eyes
+            const leftEye = new THREE.Mesh(
+                new THREE.SphereGeometry(0.03, 8, 8),
+                new THREE.MeshBasicMaterial({ color: 0xFFFFFF })
+            );
+            leftEye.position.set(-0.05, 0.52, 0.12);
+            characterGroup.add(leftEye);
+            
+            const rightEye = new THREE.Mesh(
+                new THREE.SphereGeometry(0.03, 8, 8),
+                new THREE.MeshBasicMaterial({ color: 0xFFFFFF })
+            );
+            rightEye.position.set(0.05, 0.52, 0.12);
+            characterGroup.add(rightEye);
+            
+            // Create pupils
+            const leftPupil = new THREE.Mesh(
+                new THREE.SphereGeometry(0.015, 8, 8),
+                new THREE.MeshBasicMaterial({ color: 0x000000 })
+            );
+            leftPupil.position.set(-0.05, 0.52, 0.14);
+            characterGroup.add(leftPupil);
+            
+            const rightPupil = new THREE.Mesh(
+                new THREE.SphereGeometry(0.015, 8, 8),
+                new THREE.MeshBasicMaterial({ color: 0x000000 })
+            );
+            rightPupil.position.set(0.05, 0.52, 0.14);
+            characterGroup.add(rightPupil);
+            
+            // Create mouth
+            const mouth = new THREE.Mesh(
+                new THREE.BoxGeometry(0.08, 0.02, 0.01),
+                new THREE.MeshBasicMaterial({ color: 0x000000 })
+            );
+            mouth.position.set(0, 0.45, 0.15);
+            characterGroup.add(mouth);
+            
+            // Position and scale the character
+            characterGroup.position.y = -0.25; // Adjust to be properly positioned on the floor
+            characterGroup.scale.set(0.9, 0.9, 0.9); // Scale down a bit if needed
+            
+            return characterGroup;
+        }
+
+        // Handle window resize
+        function onWindowResize() {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        }
+
+        // Handle mouse wheel for zoom
+        function onMouseWheel(event) {
+            cameraDistance = Math.max(5, Math.min(25, cameraDistance + event.deltaY * 0.01));
+            updateCameraPosition();
+        }
+
+        // Update camera position based on rotation and distance
+        function updateCameraPosition() {
+            const x = Math.sin(cameraRotation) * cameraDistance;
+            const z = Math.cos(cameraRotation) * cameraDistance;
+            
+            // Calculate center of the level
+            const gridSize = currentLevel.length;
+            const centerX = gridSize / 2 - 0.5;
+            const centerZ = gridSize / 2 - 0.5;
+            
+            camera.position.set(centerX + x, cameraHeight, centerZ + z);
+            camera.lookAt(centerX, 0, centerZ);
+        }
+
+        // Create 3D objects for game elements
+        function createGameObjects() {
+            console.log("Creating game objects");
+            
+            // Clear previous objects
+            while(scene.children.length > 0) { 
+                scene.remove(scene.children[0]); 
+            }
+            
+            blockObjects = [];
+            targetObjects = [];
+            
+            // Add lighting
+            const ambientLight = new THREE.AmbientLight(0x404040, 0.5);
+            scene.add(ambientLight);
+            
+            const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
+            directionalLight.position.set(10, 20, 10);
+            directionalLight.castShadow = true;
+            
+            // Configure shadow properties for better quality
+            if (directionalLight.shadow) {
+                directionalLight.shadow.mapSize.width = 1024;
+                directionalLight.shadow.mapSize.height = 1024;
+                directionalLight.shadow.camera.near = 0.5;
+                directionalLight.shadow.camera.far = 50;
+            }
+            
+            scene.add(directionalLight);
+            
+            // Create floor
+            const floorGeometry = new THREE.PlaneGeometry(currentLevel.length, currentLevel.length);
+            const floorMaterial = new THREE.MeshStandardMaterial({ 
+                color: 0x8B4513, // Brown
+                roughness: 0.8
+            });
+            const floor = new THREE.Mesh(floorGeometry, floorMaterial);
+            floor.rotation.x = -Math.PI / 2;
+            floor.position.set(currentLevel.length / 2 - 0.5, -0.5, currentLevel.length / 2 - 0.5);
+            floor.receiveShadow = true;
+            scene.add(floor);
+            
+            // Create grid lines
+            const gridHelper = new THREE.GridHelper(currentLevel.length, currentLevel.length);
+            gridHelper.position.set(currentLevel.length / 2 - 0.5, -0.49, currentLevel.length / 2 - 0.5);
+            scene.add(gridHelper);
+            
+            // Create walls
+            for (let y = 0; y < currentLevel.length; y++) {
+                for (let x = 0; x < currentLevel[y].length; x++) {
+                    if (currentLevel[y][x] === WALL) {
+                        const wallGeometry = new THREE.BoxGeometry(1, 1, 1);
+                        const wallMaterial = new THREE.MeshStandardMaterial({ color: 0x808080 }); // Gray
+                        const wall = new THREE.Mesh(wallGeometry, wallMaterial);
+                        wall.position.set(x, 0, y);
+                        wall.castShadow = true;
+                        wall.receiveShadow = true;
+                        scene.add(wall);
+                    }
+                }
+            }
+            
+            // Create player (human character)
+            playerGroup = createHumanCharacter();
+            playerGroup.position.set(playerPos.x, 0, playerPos.y);
+            
+            // Set initial rotation based on last direction
+            rotatePlayerModel(lastDirection);
+            
+            scene.add(playerGroup);
+            player = playerGroup; // Keep reference for animations
+            
+            // Create blocks
+            blocks.forEach(block => {
+                const blockGeometry = new THREE.BoxGeometry(0.9, 0.9, 0.9);
+                const blockMaterial = new THREE.MeshStandardMaterial({ color: 0xA52A2A }); // Brown
+                const blockObject = new THREE.Mesh(blockGeometry, blockMaterial);
+                blockObject.position.set(block.x, 0, block.y);
+                blockObject.castShadow = true;
+                blockObject.receiveShadow = true;
+                scene.add(blockObject);
+                blockObjects.push({
+                    mesh: blockObject,
+                    pos: { x: block.x, y: block.y }
+                });
+            });
+            
+            // Create targets
+            targets.forEach(target => {
+                const targetGeometry = new THREE.CylinderGeometry(0.5, 0.5, 0.1, 32);
+                const targetMaterial = new THREE.MeshStandardMaterial({ 
+                    color: 0x00FF00, // Green
+                    transparent: true,
+                    opacity: 0.7
+                });
+                const targetObject = new THREE.Mesh(targetGeometry, targetMaterial);
+                targetObject.position.set(target.x, -0.4, target.y);
+                targetObject.receiveShadow = true;
+                scene.add(targetObject);
+                targetObjects.push({
+                    mesh: targetObject,
+                    pos: { x: target.x, y: target.y }
+                });
+            });
+            
+            // Update camera position after creating objects
+            updateCameraPosition();
+            
+            console.log("Game objects created successfully");
+        }
+
+        // Rotate the player model to face the direction of movement
+        function rotatePlayerModel(direction) {
+            if (!playerGroup) return;
+            
+            switch(direction) {
+                case "up":
+                    playerGroup.rotation.y = Math.PI;
+                    break;
+                case "down":
+                    playerGroup.rotation.y = 0;
+                    break;
+                case "left":
+                    playerGroup.rotation.y = Math.PI / 2;
+                    break;
+                case "right":
+                    playerGroup.rotation.y = -Math.PI / 2;
+                    break;
+            }
+            
+            lastDirection = direction;
+        }
+
+        // Initialize level
+        function initializeLevel(levelIndex) {
+            console.log(`Initializing level ${levelIndex + 1}`);
+            
+            const level = LEVELS[levelIndex];
+            currentLevel = level.grid.map(row => [...row]);
+            playerPos = { ...level.playerPos };
+            blocks = level.blocks.map(block => ({...block}));
+            targets = level.targets.map(target => ({...target}));
+            document.getElementById('level-display').innerHTML = `Current Level: ${levelIndex + 1}`;
+            
+            createGameObjects();
+        }
+
+        // Initialize game
+        function initializeGame() {
+            console.log("Initializing game");
+            
+            initThreeJS();
+            initializeLevel(currentLevelIndex);
+            animate();
+            
+            // Add event listeners
+            document.addEventListener('keydown', handleKeyDown);
+            document.getElementById('reset-button').addEventListener('click', resetLevel);
+            
+            console.log("Game initialization complete");
+        }
+
+        // Check if a block is on a target
+        function isOnTarget(x, y) {
+            for (let target of targets) {
+                if (target.x === x && target.y === y) {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        // Check win condition
+        function checkWinCondition() {
+            let blocksOnTarget = 0;
+            blocks.forEach(block => {
+                if (isOnTarget(block.x, block.y)) blocksOnTarget++;
+            });
+            
+            // Update visual appearance of blocks on targets
+            blockObjects.forEach(blockObj => {
+                const isOnTargetPos = isOnTarget(blockObj.pos.x, blockObj.pos.y);
+                blockObj.mesh.material.color.set(isOnTargetPos ? 0xFF8C00 : 0xA52A2A); // Orange if on target, brown otherwise
+            });
+            
+            if (blocksOnTarget === blocks.length) {
+                console.log("Level complete!");
+                setTimeout(() => {
+                    currentLevelIndex = (currentLevelIndex + 1) % LEVELS.length;
+                    initializeLevel(currentLevelIndex);
+                }, 1000);
+            }
+        }
+
+        // Reset current level
+        function resetLevel() {
+            console.log("Resetting level");
+            initializeLevel(currentLevelIndex);
+        }
+
+        // Check if player can move to a new position
+        function canMove(newPos, movement) {
+            if (currentLevel[newPos.y][newPos.x] === WALL) return false;
+            
+            // Check if there's a block at the new position
+            if (currentLevel[newPos.y][newPos.x] === BLOCK) {
+                const blockIndex = blocks.findIndex(b => b.x === newPos.x && b.y === newPos.y);
+                const beyondBlock = { x: newPos.x + movement.x, y: newPos.y + movement.y };
+                
+                // Check if player can push the block
+                if (currentLevel[beyondBlock.y][beyondBlock.x] === WALL || 
+                    currentLevel[beyondBlock.y][beyondBlock.x] === BLOCK) {
+                    return false;
+                }
+                
+                // Move the block
+                currentLevel[beyondBlock.y][beyondBlock.x] = BLOCK;
+                currentLevel[newPos.y][newPos.x] = EMPTY;
+                
+                if (blockIndex !== -1) {
+                    blocks[blockIndex] = {x: beyondBlock.x, y: beyondBlock.y};
+                    // Update 3D block position
+                    const blockObj = blockObjects.find(b => b.pos.x === newPos.x && b.pos.y === newPos.y);
+                    if (blockObj) {
+                        blockObj.pos = {x: beyondBlock.x, y: beyondBlock.y};
+                        animateMove(blockObj.mesh, beyondBlock.x, beyondBlock.y);
+                    }
+                }
+                return true;
+            }
+            return true;
+        }
+
+        // Move player
+        function move(direction) {
+            console.log(`Moving ${direction}`);
+            
+            // First rotate player model to face movement direction
+            rotatePlayerModel(direction);
+            
+            const movements = {
+                up: { x: 0, y: -1 },
+                down: { x: 0, y: 1 },
+                left: { x: -1, y: 0 },
+                right: { x: 1, y: 0 }
+            };
+            
+            const movement = movements[direction];
+            const newPos = { x: playerPos.x + movement.x, y: playerPos.y + movement.y };
+            
+            if (canMove(newPos, movement)) {
+                currentLevel[playerPos.y][playerPos.x] = EMPTY;
+                playerPos = newPos;
+                currentLevel[playerPos.y][playerPos.x] = PLAYER;
+                
+                // Animate player movement
+                animateMove(player, playerPos.x, playerPos.y);
+                
+                // Check win condition after a slight delay
+                setTimeout(checkWinCondition, 300);
+            }
+        }
+
+        // Animate object movement
+        function animateMove(object, x, y) {
+            const targetPosition = { x: x, y: 0, z: y };
+            const duration = 200; // ms
+            const startTime = Date.now();
+            const startPosition = { x: object.position.x, y: object.position.y, z: object.position.z };
+            
+            function updatePosition() {
+                const elapsed = Date.now() - startTime;
+                const progress = Math.min(elapsed / duration, 1);
+                
+                object.position.x = startPosition.x + (targetPosition.x - startPosition.x) * progress;
+                object.position.z = startPosition.z + (targetPosition.z - startPosition.z) * progress;
+                
+                if (progress < 1) {
+                    requestAnimationFrame(updatePosition);
+                }
+            }
+            
+            updatePosition();
+        }
+
+        // Handle keyboard input
+        function handleKeyDown(e) {
+            // Player movement
+            const keyActions = {
+                'ArrowUp': 'up',
+                'ArrowDown': 'down',
+                'ArrowLeft': 'left',
+                'ArrowRight': 'right'
+            };
+            
+            if (keyActions[e.key]) {
+                e.preventDefault();
+                move(keyActions[e.key]);
+            }
+            
+            // Reset level
+            if (e.code === 'Space') {
+                e.preventDefault();
+                resetLevel();
+            }
+            
+            // Camera rotation
+            if (e.key === 'a') {
+                cameraRotation += 0.1;
+                updateCameraPosition();
+            } else if (e.key === 'd') {
+                cameraRotation -= 0.1;
+                updateCameraPosition();
+            }
+            
+            // Camera height
+            if (e.key === 'w') {
+                cameraHeight = Math.min(20, cameraHeight + 1);
+                updateCameraPosition();
+            } else if (e.key === 's') {
+                cameraHeight = Math.max(3, cameraHeight - 1);
+                updateCameraPosition();
+            }
+        }
+
+        // Animation loop
+        function animate() {
+            requestAnimationFrame(animate);
+            renderer.render(scene, camera);
+        }
+
+        // Add error handling
+        window.onerror = function(message, source, lineno, colno, error) {
+            console.error("JavaScript Error:", message, "at line", lineno, "column", colno);
+            alert("An error occurred: " + message);
+            return true;
+        };
+
+        // Start the game when the window loads
+        window.onload = function() {
+            console.log("Window loaded");
+            try {
+                initializeGame();
+            } catch (error) {
+                console.error("Error during game initialization:", error);
+                alert("Error initializing game: " + error.message);
+            }
+        };
+
+        // Log when script is loaded
+        console.log("Script loaded successfully");
+    </script>
+</body>
+</html>
